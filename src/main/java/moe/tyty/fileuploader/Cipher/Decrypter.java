@@ -29,15 +29,4 @@ public class Decrypter {
             throw new CipherWorkException();
         }
     }
-
-    public static void main(String[] args) {
-        Decrypter dec = new Decrypter("test");
-        byte[] sink = {
-                60, 10, -1, -97, -18, -107, 60, 103,
-                -123, 103, -66, -74, 54, -11, 33, -96,
-                -110, 62, 86, -122, -5, -26, 115, -39,
-                90, -38, 79, 37, 47, -34, -35, 91
-        };
-        System.out.println(new String(dec.decrypt(sink)));
-    }
 }
