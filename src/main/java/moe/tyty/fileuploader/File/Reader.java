@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
@@ -22,6 +21,7 @@ public class Reader {
     public long size;
     private int buff_s;
     private long offset;
+    private int order;
     private boolean working;
 
     /**
@@ -49,7 +49,7 @@ public class Reader {
      */
     public static class ReadData {
         public boolean ok = false;
-        public long offset;
+        public int order;
         public Future<Integer> size;
         public ByteBuffer data;
     }
@@ -57,10 +57,8 @@ public class Reader {
     /**
      * Read a piece of file.
      * @return ReadData object that contains the data read.
-     * @throws ExecutionException strange exception during async operation. Simply passing the exception.
-     * @throws InterruptedException interrupt issued by user. Simply passing the exception.
      */
-    public ReadData read() throws ExecutionException, InterruptedException {
+    public synchronized ReadData read() {
         ReadData result = new ReadData();
         if (!working) {
             return result;
@@ -72,16 +70,17 @@ public class Reader {
         if (offset + buff_s > size) {
             result.data = ByteBuffer.allocate((int) (size - offset));
             result.size = file.read(result.data, offset);
-            result.offset = offset;
+            result.order = order;
             result.ok = true;
             offset = size;
         }
         else {
             result.data = ByteBuffer.allocate(buff_s);
             result.size = file.read(result.data, offset);
-            result.offset = offset;
+            result.order = order;
             result.ok = true;
             offset += buff_s;
+            order += 1;
         }
         return result;
     }

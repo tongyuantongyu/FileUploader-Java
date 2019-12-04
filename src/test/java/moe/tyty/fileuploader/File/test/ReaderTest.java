@@ -3,6 +3,7 @@ package moe.tyty.fileuploader.File.test;
 import moe.tyty.fileuploader.File.Reader;
 import org.junit.Test;
 import java.io.File;
+import java.util.Objects;
 
 import static org.junit.Assert.*;
 
@@ -10,7 +11,7 @@ public class ReaderTest {
 
     private static String getResourcePath(String ResourceFile) {
         ClassLoader classLoader = ReaderTest.class.getClassLoader();
-        File file = new File(classLoader.getResource(ResourceFile).getFile());
+        File file = new File(Objects.requireNonNull(classLoader.getResource(ResourceFile)).getFile());
         return file.getAbsolutePath();
     }
 
@@ -28,7 +29,7 @@ public class ReaderTest {
         assertEquals(Integer.valueOf(16), data.size.get());
 
         // first read. verify data
-        assertEquals(0, data.offset);
+        assertEquals(0, data.order);
         assertArrayEquals("0123456789ABCDEF".getBytes(), data.data.array());
 
         data = reader.read();
@@ -37,7 +38,7 @@ public class ReaderTest {
         assertEquals(Integer.valueOf(16), data.size.get());
 
         // second read. verify data
-        assertEquals(16, data.offset);
+        assertEquals(1, data.order);
         assertArrayEquals("0123456789ABCDEF".getBytes(), data.data.array());
 
         // third read. Nothing left
@@ -61,7 +62,7 @@ public class ReaderTest {
         assertEquals(Integer.valueOf(16), data.size.get());
 
         // first read. verify data
-        assertEquals(0, data.offset);
+        assertEquals(0, data.order);
         assertArrayEquals("0123456789ABCDEF".getBytes(), data.data.array());
 
         data = reader.read();
@@ -70,7 +71,7 @@ public class ReaderTest {
         assertEquals(Integer.valueOf(15), data.size.get());
 
         // second read. verify data
-        assertEquals(16, data.offset);
+        assertEquals(1, data.order);
         assertArrayEquals("0123456789ABCDE".getBytes(), data.data.array());
 
         // third read. Nothing left

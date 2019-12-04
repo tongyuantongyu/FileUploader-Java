@@ -22,6 +22,7 @@ import java.util.concurrent.Future;
 public class Writer {
     private Vector<Future<Integer>> asyncFileWriteFutureVector;
     private AsynchronousFileChannel file;
+    private int buff_s;
     private boolean working;
 
     /**
@@ -32,7 +33,8 @@ public class Writer {
      * this is still not perfect as multiple files can be opened for writing simultaneously.
      * @throws FileOpenException Throws when file can't be opened for writing. Server will shutdown the connection then.
      */
-    public Writer(String path, long size) throws FileOpenException {
+    public Writer(String path, long size, int buff_s) throws FileOpenException {
+        this.buff_s = buff_s;
         asyncFileWriteFutureVector = new Vector<>();
         try {
             if (Files.getFileStore(Paths.get("./")).getUsableSpace() < size) {
@@ -47,16 +49,20 @@ public class Writer {
         }
     }
 
+    static public class WriteData {
+        public int order;
+        public ByteBuffer data;
+    }
+
     /**
      * write a piece of file
-     * @param data data of the piece. ByteBuffer carries length info so it's bundled.
-     * @param offset offset of the piece.
+     * @param data data of the piece. ByteBuffer carries length info so no length info is required.
      * @return whether write operation is successful.
      */
-    public boolean write(ByteBuffer data, long offset) {
+    public boolean write(WriteData data) {
         if (!working) return false;
         try {
-            asyncFileWriteFutureVector.addElement(file.write(data, offset));
+            asyncFileWriteFutureVector.addElement(file.write(data.data, ((long) data.order) * buff_s));
             return true;
         } catch (RuntimeException e) {
             return false;

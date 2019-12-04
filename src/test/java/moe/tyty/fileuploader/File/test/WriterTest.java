@@ -18,17 +18,18 @@ public class WriterTest {
     @Test
     public void write_full_piece() throws Exception {
         String TestPath = tmpFolder.getRoot().getAbsolutePath();
-        Writer writer = new Writer(TestPath + "/test_fullpiece", 32);
+        Writer writer = new Writer(TestPath + "/test_fullpiece", 32, 16);
 
         // first write
-        byte[] data = "0123456789ABCDEF".getBytes();
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        assertTrue(writer.write(buffer, 0));
+        Writer.WriteData data = new Writer.WriteData();
+        data.data = ByteBuffer.wrap("0123456789ABCDEF".getBytes());
+        data.order = 0;
+        assertTrue(writer.write(data));
 
         // second write
-        data = "0123456789ABCDEF".getBytes();
-        buffer = ByteBuffer.wrap(data);
-        assertTrue(writer.write(buffer, 16));
+        data.data = ByteBuffer.wrap("0123456789ABCDEF".getBytes());
+        data.order = 1;
+        assertTrue(writer.write(data));
 
         writer.close();
 
@@ -39,17 +40,18 @@ public class WriterTest {
     @Test
     public void write_short_piece() throws Exception {
         String TestPath = tmpFolder.getRoot().getAbsolutePath();
-        Writer writer = new Writer(TestPath + "/test_shortpiece", 31);
+        Writer writer = new Writer(TestPath + "/test_shortpiece", 31, 16);
 
         // first write
-        byte[] data = "0123456789ABCDEF".getBytes();
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        assertTrue(writer.write(buffer, 0));
+        Writer.WriteData data = new Writer.WriteData();
+        data.data = ByteBuffer.wrap("0123456789ABCDEF".getBytes());
+        data.order = 0;
+        assertTrue(writer.write(data));
 
         // second write
-        data = "0123456789ABCDE".getBytes();
-        buffer = ByteBuffer.wrap(data);
-        assertTrue(writer.write(buffer, 16));
+        data.data = ByteBuffer.wrap("0123456789ABCDE".getBytes());
+        data.order = 1;
+        assertTrue(writer.write(data));
 
         writer.close();
 
@@ -60,6 +62,6 @@ public class WriterTest {
     @Test(expected = moe.tyty.fileuploader.Exception.FileOpenException.class)
     public void write_too_big() {
         String TestPath = tmpFolder.getRoot().getAbsolutePath();
-        Writer writer = new Writer(TestPath + "/TOO_BIG_FILE", Long.MAX_VALUE);
+        Writer writer = new Writer(TestPath + "/TOO_BIG_FILE", Long.MAX_VALUE, 16);
     }
 }
