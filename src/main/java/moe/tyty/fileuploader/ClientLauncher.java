@@ -29,7 +29,7 @@ public class ClientLauncher {
         options.addOption("s", "size",
                 true, "size of the file piece (in byte)");
 
-        options.addOption("help", false, "show help");
+        options.addOption("?","help", false, "show help");
 
         options.addOption("4", false, "Use IPv4 only");
         options.addOption("6", false, "Use IPv6 only");
@@ -40,6 +40,8 @@ public class ClientLauncher {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println("Options given are unrecognizable.");
+            HelpFormatter hf = new HelpFormatter();
+            hf.printHelp("Options", options);
             System.exit(1);
             return;
         }
@@ -58,6 +60,8 @@ public class ClientLauncher {
 
         if (_host == null || _port == null || key == null || file == null) {
             System.out.println("One or more required parameters not given.");
+            HelpFormatter hf = new HelpFormatter();
+            hf.printHelp("Options", options);
             System.exit(1);
             return;
         }
