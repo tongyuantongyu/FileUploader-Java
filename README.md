@@ -5,4 +5,4 @@ Upload file from local to remote in multithread.<br/><br/>
 
 This project use Java to reimplement the protocol used by C++ version File Uploader.
 
-This Project is now under heavy development. Usable build is not available for now.
+This Project is now under heavy development. Only Client side is implemented and working now. 
