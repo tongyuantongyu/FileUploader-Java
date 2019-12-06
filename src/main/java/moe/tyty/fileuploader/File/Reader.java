@@ -22,7 +22,7 @@ public class Reader {
     private int buff_s;
     private long offset;
     private int order;
-    private boolean working;
+    public boolean working;
 
     /**
      * Constructor method

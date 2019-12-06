@@ -5,25 +5,30 @@ import moe.tyty.fileuploader.File.Reader;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+
+import static com.ea.async.Async.await;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class Constructor {
     static byte[] MAGIC_HEADER = {84, 89};
     static byte[] MAGIC_HEADER_TRANSFER = {89, 84};
     static byte[] VERSION = {1, 1, 1, 1};
-    static byte[] PADDING_FE = {
-            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
-            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
-            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
-            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe
-    };
-    static byte[] PADDING_FF = {
-            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
-            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
-            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
-            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff
-    };
+//    static byte[] PADDING_FE = {
+//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
+//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
+//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
+//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe
+//    };
+//    static byte[] PADDING_FF = {
+//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff
+//    };
 
     Encrypter enc;
 
@@ -31,19 +36,49 @@ public class Constructor {
         enc = new Encrypter(password);
     }
 
+    public static <T> CompletionHandler<T, Void> regToFuture(CompletableFuture<T> completableFuture) {
+        return new CompletionHandler<>() {
+            @Override
+            public void completed(T result, Void attachment) {
+                completableFuture.complete(result);
+            }
 
-    public static <T extends Number> byte[] fixedLength(T number, int length) {
-        return String.format("%0" + length +"x", number.longValue()).getBytes();
+            @Override
+            public void failed(Throwable exc, Void attachment) {
+                completableFuture.completeExceptionally(exc);
+            }
+        };
     }
 
-    public boolean writeMsg(AsynchronousSocketChannel channel, byte[] message, Session.MessageType type) {
-        Future<Integer> head = channel.write(ByteBuffer.wrap(MAGIC_HEADER));
-        Future<Integer> length = channel.write(ByteBuffer.wrap(String.format("%08x", message.length).getBytes()));
-        Future<Integer> msg = channel.write(ByteBuffer.wrap(message));
+    public static <T extends Number> byte[] fixedLength(T number, int length) {
+        return String.format("%0" + length + "x", number.longValue()).getBytes();
+    }
+
+    public CompletableFuture<Boolean> writeMsg(AsynchronousSocketChannel channel, byte[] message, Session.MessageType type) {
         try {
-            return head.get() == 2 && length.get() == 8 && msg.get() == message.length;
-        } catch (InterruptedException | ExecutionException e) {
-            return false;
+            CompletableFuture<Integer> headFuture = new CompletableFuture<>();
+            switch (type) {
+                case SESSION:
+                    channel.write(ByteBuffer.wrap(MAGIC_HEADER), null, regToFuture(headFuture));
+                    break;
+                case THREAD:
+                    channel.write(ByteBuffer.wrap(MAGIC_HEADER_TRANSFER), null, regToFuture(headFuture));
+            }
+            Integer headLength = await(headFuture);
+
+            CompletableFuture<Integer> lengthFuture = new CompletableFuture<>();
+            channel.write(ByteBuffer.wrap(String.format("%08x", message.length).getBytes()), null, regToFuture(lengthFuture));
+            Integer lengthLength = await(lengthFuture);
+
+            CompletableFuture<Integer> msgFuture = new CompletableFuture<>();
+            channel.write(ByteBuffer.wrap(message), null, regToFuture(msgFuture));
+            Integer msgLength = await(msgFuture);
+
+            return completedFuture(headLength.equals(2) && lengthLength.equals(8) && msgLength.equals(message.length));
+        } catch (CompletionException e) {
+            // for debug
+            e.printStackTrace();
+            return completedFuture(false);
         }
     }
 
@@ -58,7 +93,7 @@ public class Constructor {
         ByteBuffer buffer = ByteBuffer.allocate(6);
         buffer.put(MAGIC_HEADER);
         buffer.put(VERSION);
-        return buffer.array();
+        return enc.encrypt(buffer.array());
     }
 
     public byte[] clientHello(Session.HelloStatus status, byte[] session) {
@@ -102,16 +137,14 @@ public class Constructor {
     }
 
     public byte[] fileTransferInit(byte[] session) {
-        ByteBuffer buffer = ByteBuffer.allocate(48);
-        buffer.put(PADDING_FE);
+        ByteBuffer buffer = ByteBuffer.allocate(32);
         buffer.put(session);
         return enc.encrypt(buffer.array());
     }
 
     public byte[] fileTransfer(byte[] session, Reader.ReadData data) throws ExecutionException, InterruptedException {
         int size = data.size.get();
-        ByteBuffer buffer = ByteBuffer.allocate(64 + size);
-        buffer.put(PADDING_FF);
+        ByteBuffer buffer = ByteBuffer.allocate(48 + size);
         buffer.put(session);
         buffer.put(fixedLength(data.order, 8));
         buffer.put(fixedLength(size, 8));

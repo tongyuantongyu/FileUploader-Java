@@ -7,4 +7,7 @@ public class NotOurMsgException extends RuntimeException {
     public NotOurMsgException(String message) {
         super(message);
     }
+    public NotOurMsgException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -7,8 +7,14 @@ import moe.tyty.fileuploader.File.Writer;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
+import static com.ea.async.Async.await;
 
 public class Reader {
     static byte[] MAGIC_HEADER = {84, 89};
@@ -21,50 +27,77 @@ public class Reader {
         dec = new Decrypter(password);
     }
 
-    static boolean isOurMsg(AsynchronousSocketChannel channel) {
+    public static <T> CompletionHandler<T, Void> regToFuture(CompletableFuture<T> completableFuture) {
+        return new CompletionHandler<>() {
+            @Override
+            public void completed(T result, Void attachment) {
+                completableFuture.complete(result);
+            }
+
+            @Override
+            public void failed(Throwable exc, Void attachment) {
+                completableFuture.completeExceptionally(exc);
+            }
+        };
+    }
+
+    static CompletableFuture<Boolean> isOurMsg(AsynchronousSocketChannel channel) {
+        ByteBuffer head = ByteBuffer.allocate(2);
+        CompletableFuture<Integer> headFuture = new CompletableFuture<>();
+        channel.read(head, null, regToFuture(headFuture));
         try {
-            ByteBuffer head = ByteBuffer.allocate(2);
-            return channel.read(head).get() == 2 && head.array() == MAGIC_HEADER;
-        } catch (InterruptedException | ExecutionException e) {
-            return false;
+            return completedFuture(await(headFuture).equals(2) && Arrays.equals(head.array(), MAGIC_HEADER));
+        } catch (CompletionException e) {
+            throw new NotOurMsgException("Failed in reading session head.", e);
         }
     }
 
-    static boolean isOurMsgTransfer(AsynchronousSocketChannel channel) {
+    static CompletableFuture<Boolean> isOurMsgTransfer(AsynchronousSocketChannel channel) {
+        ByteBuffer head = ByteBuffer.allocate(2);
+        CompletableFuture<Integer> headFuture = new CompletableFuture<>();
+        channel.read(head, null, regToFuture(headFuture));
         try {
-            ByteBuffer head = ByteBuffer.allocate(2);
-            return channel.read(head).get() == 2 && head.array() == MAGIC_HEADER_TRANSFER;
-        } catch (InterruptedException | ExecutionException e) {
-            return false;
+            return completedFuture(await(headFuture).equals(2) && Arrays.equals(head.array(), MAGIC_HEADER_TRANSFER));
+        } catch (CompletionException e) {
+            throw new NotOurMsgException("Failed in reading transfer head.", e);
         }
     }
 
-    public byte[] readVerifiedMsg(AsynchronousSocketChannel channel) {
+    public CompletableFuture<byte[]> readVerifiedMsg(AsynchronousSocketChannel channel) {
         try {
-            ByteBuffer raw_length = ByteBuffer.allocate(2);
-            if (channel.read(raw_length).get() != 8) {
-                throw new NotOurMsgException("Bad data in reading message length info.");
+            Integer futureLength;
+            ByteBuffer raw_length = ByteBuffer.allocate(8);
+            CompletableFuture<Integer> lengthFuture = new CompletableFuture<>();
+            channel.read(raw_length, null, regToFuture(lengthFuture));
+            futureLength = await(lengthFuture);
+            if (!futureLength.equals(8)) {
+                throw new NotOurMsgException(String.format(
+                        "Bad data in reading message length info. Length field except length 8, got %d", futureLength));
             }
             int length = Integer.parseUnsignedInt(new String(raw_length.array()), 16);
             ByteBuffer message = ByteBuffer.allocate(length);
-            if (channel.read(message).get() != length) {
-                throw new NotOurMsgException("Bad data in reading message data.");
+            CompletableFuture<Integer> dataFuture = new CompletableFuture<>();
+            channel.read(message, null, regToFuture(dataFuture));
+            futureLength = await(dataFuture);
+            if (!futureLength.equals(length)) {
+                throw new NotOurMsgException(String.format(
+                        "Bad data in reading message data. Data field except length %d, got %d", length, futureLength));
             }
-            return dec.decrypt(message.array());
-        } catch (InterruptedException | ExecutionException e) {
-            throw new NotOurMsgException("Failed in reading message.");
+            return completedFuture(message.array());
+        } catch (CompletionException e) {
+            throw new NotOurMsgException("Failed in reading transfer head.", e);
         }
     }
 
-    public byte[] readMsg(AsynchronousSocketChannel channel, Session.MessageType type) {
+    public CompletableFuture<byte[]> readMsg(AsynchronousSocketChannel channel, Session.MessageType type) {
         switch (type) {
             case SESSION:
-                if (!isOurMsg(channel)) {
+                if (!await(isOurMsg(channel))) {
                     throw new NotOurMsgException("Received connection but not a session.");
                 }
                 break;
             case THREAD:
-                if (!isOurMsgTransfer(channel)) {
+                if (!await(isOurMsgTransfer(channel))) {
                     throw new NotOurMsgException("Received connection but not a thread.");
                 }
                 break;
@@ -72,28 +105,34 @@ public class Reader {
         return readVerifiedMsg(channel);
     }
 
-    public Session.MsgGuess readMsgGuess(AsynchronousSocketChannel channel) {
+    public CompletableFuture<Session.MsgGuess> readMsgGuess(AsynchronousSocketChannel channel) {
         Session.MsgGuess result = new Session.MsgGuess();
+        ByteBuffer head = ByteBuffer.allocate(2);
+        CompletableFuture<Integer> headFuture = new CompletableFuture<>();
+        channel.read(head, null, regToFuture(headFuture));
+        Integer futureLength;
         try {
-            ByteBuffer head = ByteBuffer.allocate(2);
-            if (channel.read(head).get() != 2) {
-                throw new NotOurMsgException("Bad data in reading message head.");
+            futureLength = await(headFuture);
+            if (!futureLength.equals(2)) {
+                throw new NotOurMsgException(String.format(
+                        "Bad data in reading message head. Head field except length 2, got %d", futureLength));
             }
-            byte[] head_byte = head.array();
-            if (head_byte == MAGIC_HEADER) {
-                result.type = Session.MessageType.SESSION;
-            }
-            else if (head_byte == MAGIC_HEADER_TRANSFER) {
-                result.type = Session.MessageType.THREAD;
-            }
-            else {
-                throw new NotOurMsgException("Bad data in reading message type.");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new NotOurMsgException("Failed in reading message.");
+        } catch (CompletionException e) {
+            throw new NotOurMsgException("Failed in reading transfer head.", e);
+        }
+
+        byte[] head_byte = head.array();
+        if (Arrays.equals(head.array(), MAGIC_HEADER)) {
+            result.type = Session.MessageType.SESSION;
+        }
+        else if (Arrays.equals(head.array(), MAGIC_HEADER_TRANSFER)) {
+            result.type = Session.MessageType.THREAD;
+        }
+        else {
+            throw new NotOurMsgException("Bad data in reading message type. Unknown connection type.");
         }
         result.message = readVerifiedMsg(channel);
-        return result;
+        return completedFuture(result);
     }
 
     public static byte[] readFromBuffer(ByteBuffer buffer, int length) {
@@ -105,10 +144,10 @@ public class Reader {
     public Session.HelloStatus serverHello(byte[] message) {
         try {
             ByteBuffer buffer = ByteBuffer.wrap(dec.decrypt(message));
-            if (readFromBuffer(buffer, 2) != MAGIC_HEADER) {
+            if (!Arrays.equals(readFromBuffer(buffer, 2), MAGIC_HEADER)) {
                 return Session.HelloStatus.BAD_PASSWORD;
             }
-            if (readFromBuffer(buffer, 4) != VERSION) {
+            if (!Arrays.equals(readFromBuffer(buffer, 4), VERSION)) {
                 return Session.HelloStatus.BAD_VERSION;
             }
             return Session.HelloStatus.OK;
@@ -163,7 +202,7 @@ public class Reader {
     }
 
     public static void verifySession(byte[] session, ByteBuffer buffer) {
-        if (readFromBuffer(buffer, 32) != session) {
+        if (!Arrays.equals(readFromBuffer(buffer, 32), session)) {
             throw new NotOurMsgException("Session Conflict.");
         }
     }

@@ -2,6 +2,7 @@ package moe.tyty.fileuploader.Protocol;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 
 public class Session {
     public enum MessageType {SESSION, THREAD}
@@ -10,19 +11,19 @@ public class Session {
     Random random_source = new Random();
 
     public static class MsgGuess {
-        Session.MessageType type;
-        byte[] message;
+        public Session.MessageType type;
+        public CompletableFuture<byte[]> message;
     }
 
     public static class ClientHelloResult {
-        HelloStatus status;
-        byte[] session;
+        public HelloStatus status;
+        public byte[] session;
     }
 
     public static class FileNegotiationInfo {
-        int pieceSize;
-        long fileLength;
-        String filePath;
+        public int pieceSize;
+        public long fileLength;
+        public String filePath;
     }
 
     byte[] session(int length) {

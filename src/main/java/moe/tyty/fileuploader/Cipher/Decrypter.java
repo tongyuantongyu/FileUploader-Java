@@ -26,7 +26,7 @@ public class Decrypter {
         try {
             return cipher.doFinal(sink);
         } catch (IllegalBlockSizeException | BadPaddingException e) {
-            throw new CipherWorkException();
+            throw new CipherWorkException(e);
         }
     }
 }

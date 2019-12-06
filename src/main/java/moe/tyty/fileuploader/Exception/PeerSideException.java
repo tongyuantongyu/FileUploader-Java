@@ -7,4 +7,7 @@ public class PeerSideException extends RuntimeException {
     public PeerSideException(String message) {
         super(message);
     }
+    public PeerSideException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
