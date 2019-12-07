@@ -22,6 +22,11 @@ public class Encrypter {
         }
     }
 
+    /**
+     * encrypt plain
+     * @param plain plain text to be encrypted
+     * @return cipher generated
+     */
     public byte[] encrypt(byte[] plain) {
         try {
             return cipher.doFinal(plain);

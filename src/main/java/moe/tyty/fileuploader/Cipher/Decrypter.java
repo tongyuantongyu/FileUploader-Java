@@ -22,6 +22,11 @@ public class Decrypter {
         }
     }
 
+    /**
+     * decrypt cipher
+     * @param sink encrypted text
+     * @return plain text
+     */
     public byte[] decrypt(byte[] sink) {
         try {
             return cipher.doFinal(sink);

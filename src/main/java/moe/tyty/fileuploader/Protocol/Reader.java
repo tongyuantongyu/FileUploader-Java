@@ -28,7 +28,7 @@ public class Reader {
     }
 
     public static <T> CompletionHandler<T, Void> regToFuture(CompletableFuture<T> completableFuture) {
-        return new CompletionHandler<>() {
+        return new CompletionHandler<T, Void>() {
             @Override
             public void completed(T result, Void attachment) {
                 completableFuture.complete(result);

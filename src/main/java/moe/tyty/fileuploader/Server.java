@@ -3,7 +3,6 @@ package moe.tyty.fileuploader;
 import moe.tyty.fileuploader.Exception.NotOurMsgException;
 import moe.tyty.fileuploader.Protocol.Constructor;
 import moe.tyty.fileuploader.Protocol.Reader;
-
 import moe.tyty.fileuploader.Protocol.Session;
 
 import java.io.IOException;
@@ -58,8 +57,10 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
         this.key = key;
     }
 
+    /**
+     * Helper class to solve native array can't be hashed
+     */
     public static final class SessionHolder {
-
         private final byte[] t;
 
         public SessionHolder(byte[] t) {
@@ -85,6 +86,11 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
         }
     }
 
+    /**
+     * Determine connection and send to corresponding place
+     * @param CSocket socket connected
+     * @return void wrapped with CompletableFuture to use await
+     */
     public CompletableFuture<Void> dispatch(AsynchronousSocketChannel CSocket) {
         CompletableFuture<Session.MsgGuess> helloFuture = reader.readMsgGuess(CSocket);
         Session.MsgGuess guessResult = await(helloFuture);
@@ -121,6 +127,11 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
         return Return;
     }
 
+    /**
+     * callback function to be used when new connection comes in
+     * @param CSocket Connection socket
+     * @param attachment void. Placeholder
+     */
     @Override
     public void completed(AsynchronousSocketChannel CSocket, Void attachment) {
         SAcceptor.accept(null, this);
@@ -140,42 +151,27 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
         }
     }
 
+    /**
+     * callback function to be used when new connection comes in with exception
+     * @param exc exception
+     * @param attachment void. Placeholder
+     */
     @Override
     public void failed(Throwable exc, Void attachment) {
         SAcceptor.accept(null, this);
         throw new RuntimeException(exc);
     }
 
+    /**
+     * start the infinite accept loop
+     */
     public void bootstrap() {
         SAcceptor.accept(null, this);
         try {
+            // block main thread to prevent it from exit
             System.in.read();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-//    public CompletableFuture<Void> runAcceptor() {
-//        try {
-//            System.out.println("Acceptor: waiting for connection.");
-//            CompletableFuture<AsynchronousSocketChannel> acceptFuture = new CompletableFuture<>();
-//            SAcceptor.accept(null, Reader.regToFuture(acceptFuture));
-//            AsynchronousSocketChannel CSocket = await(acceptFuture);
-//
-//            System.out.println("Acceptor: Got connection.");
-//            dispatch(CSocket);
-//        } catch (NotOurMsgException e) {
-//            // debug only
-//            e.printStackTrace();
-//            System.out.println(e.getMessage());
-//            System.exit(1);
-//        } catch (CompletionException e) {
-//            // debug only
-//            e.printStackTrace();
-//            System.out.println("Exception while sending data.");
-//            System.exit(1);
-//        }
-//        runAcceptor();
-//        return Return;
-//    }
 }

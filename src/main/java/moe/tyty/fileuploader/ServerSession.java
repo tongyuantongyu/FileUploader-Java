@@ -8,7 +8,6 @@ import moe.tyty.fileuploader.Protocol.Reader;
 import moe.tyty.fileuploader.Protocol.Session;
 
 import java.io.IOException;
-import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;

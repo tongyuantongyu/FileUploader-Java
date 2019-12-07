@@ -3,7 +3,6 @@ package moe.tyty.fileuploader;
 import moe.tyty.fileuploader.Exception.NotOurMsgException;
 import moe.tyty.fileuploader.Protocol.Constructor;
 import moe.tyty.fileuploader.Protocol.Reader;
-
 import moe.tyty.fileuploader.Protocol.Session;
 
 import static com.ea.async.Async.await;

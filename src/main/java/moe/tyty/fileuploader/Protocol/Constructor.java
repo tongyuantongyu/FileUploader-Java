@@ -17,18 +17,6 @@ public class Constructor {
     static byte[] MAGIC_HEADER = {84, 89};
     static byte[] MAGIC_HEADER_TRANSFER = {89, 84};
     static byte[] VERSION = {1, 1, 1, 1};
-//    static byte[] PADDING_FE = {
-//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
-//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
-//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe,
-//            (byte) 0xfe, (byte) 0xfe, (byte) 0xfe, (byte) 0xfe
-//    };
-//    static byte[] PADDING_FF = {
-//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
-//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
-//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
-//            (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff
-//    };
 
     Encrypter enc;
 
@@ -37,7 +25,7 @@ public class Constructor {
     }
 
     public static <T> CompletionHandler<T, Void> regToFuture(CompletableFuture<T> completableFuture) {
-        return new CompletionHandler<>() {
+        return new CompletionHandler<T, Void>() {
             @Override
             public void completed(T result, Void attachment) {
                 completableFuture.complete(result);
