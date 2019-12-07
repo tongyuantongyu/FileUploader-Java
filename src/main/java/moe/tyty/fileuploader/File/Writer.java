@@ -5,9 +5,7 @@ import moe.tyty.fileuploader.Exception.FileOpenException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -37,19 +35,31 @@ public class Writer {
         this.buff_s = buff_s;
         asyncFileWriteFutureVector = new Vector<>();
         try {
-            if (Files.getFileStore(Paths.get("./")).getUsableSpace() < size) {
-                throw new FileOpenException();
+            Path _p = Paths.get(path).getRoot();
+            if (_p == null) {
+                if (Files.getFileStore(Paths.get("./")).getUsableSpace() < size) {
+                    throw new FileOpenException("No enough space.");
+                }
+            }
+            else {
+                if (Files.getFileStore(_p).getUsableSpace() < size) {
+                    throw new FileOpenException("No enough space.");
+                }
+                try {
+                    Files.createDirectories(Paths.get(path).getParent());
+                } catch (FileAlreadyExistsException ignore) {}
             }
             file = AsynchronousFileChannel.open(Paths.get(path),
                     StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             working = true;
         }
         catch (IOException e) {
-            throw new FileOpenException();
+            throw new FileOpenException(e);
         }
     }
 
     static public class WriteData {
+        public boolean OK;
         public int order;
         public ByteBuffer data;
     }
@@ -60,7 +70,7 @@ public class Writer {
      * @return whether write operation is successful.
      */
     public boolean write(WriteData data) {
-        if (!working) return false;
+        if (!working || !data.OK) return false;
         try {
             asyncFileWriteFutureVector.addElement(file.write(data.data, ((long) data.order) * buff_s));
             return true;
@@ -74,10 +84,11 @@ public class Writer {
      * @throws ExecutionException strange exception during async operation. Simply passing the exception.
      * @throws InterruptedException interrupt issued by user. Simply passing the exception.
      */
-    public void close() throws ExecutionException, InterruptedException {
+    public void close() throws ExecutionException, InterruptedException, IOException {
         if (!working) return;
         for (Future<Integer> future : asyncFileWriteFutureVector) {
             future.get();
         }
+        file.close();
     }
 }

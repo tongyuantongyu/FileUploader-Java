@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.Timer;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -125,13 +124,7 @@ public class Client {
         AsynchronousSocketChannel CSession;
         try {
 
-            try {
-                CSession = AsynchronousSocketChannel.open();
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.exit(1);
-                return False;
-            }
+            CSession = AsynchronousSocketChannel.open();
 
             System.out.print("Connecting to server...");
 
@@ -151,10 +144,9 @@ public class Client {
 
             CompletableFuture<byte[]> clientHelloFuture = reader.readMsg(CSession, Session.MessageType.SESSION);
 
-            byte[] clientHello = await(clientHelloFuture);
-            System.out.println("Received.");
-            Session.ClientHelloResult helloResult = reader.clientHello(clientHello);
+            Session.ClientHelloResult helloResult = reader.clientHello(await(clientHelloFuture));
 
+            System.out.println("Received.");
             switch (helloResult.status) {
                 case BAD_PASSWORD:
                     System.out.println("Server using another key. Check your key.");
@@ -189,8 +181,7 @@ public class Client {
 
             CompletableFuture<byte[]> fileNegotiationReplyFuture = reader.readMsg(CSession, Session.MessageType.SESSION);
 
-            byte[] negotiationReply = await(fileNegotiationReplyFuture);
-            Session.NegotiationStatus negotiationStatus = reader.fileNegotiationResult(session, negotiationReply);
+            Session.NegotiationStatus negotiationStatus = reader.fileNegotiationResult(session, await(fileNegotiationReplyFuture));
 
             switch (negotiationStatus) {
                 case OPEN_FAIL:
@@ -226,6 +217,11 @@ public class Client {
             // debug only
             e.printStackTrace();
             System.out.println("Exception while sending data.");
+            System.exit(1);
+            return False;
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Exception while opening socket.");
             System.exit(1);
             return False;
         }

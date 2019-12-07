@@ -22,6 +22,7 @@ public class WriterTest {
 
         // first write
         Writer.WriteData data = new Writer.WriteData();
+        data.OK = true;
         data.data = ByteBuffer.wrap("0123456789ABCDEF".getBytes());
         data.order = 0;
         assertTrue(writer.write(data));
@@ -44,6 +45,7 @@ public class WriterTest {
 
         // first write
         Writer.WriteData data = new Writer.WriteData();
+        data.OK = true;
         data.data = ByteBuffer.wrap("0123456789ABCDEF".getBytes());
         data.order = 0;
         assertTrue(writer.write(data));

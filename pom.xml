@@ -23,7 +23,7 @@
                 <version>3.2.0</version>
                 <executions>
                     <execution>
-                        <id>build-publisher</id>
+                        <id>build-client</id>
                         <configuration>
                             <archive>
                                 <manifest>
@@ -36,6 +36,26 @@
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
                             <finalName>${project.artifactId}-Client-${project.version}</finalName>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>build-server</id>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>moe.tyty.fileuploader.ServerLauncher</mainClass>
+                                </manifest>
+                            </archive>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <attach>false</attach>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>${project.artifactId}-Server-${project.version}</finalName>
                         </configuration>
                         <phase>package</phase>
                         <goals>

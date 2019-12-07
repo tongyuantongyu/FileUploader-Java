@@ -4,4 +4,10 @@ public class FileOpenException extends RuntimeException {
     public FileOpenException() {
         super();
     }
+    public FileOpenException(String message) {
+        super(message);
+    }
+    public FileOpenException(Throwable cause) {
+        super(cause);
+    }
 }

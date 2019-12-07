@@ -63,6 +63,9 @@ public class Constructor {
                     break;
                 case THREAD:
                     channel.write(ByteBuffer.wrap(MAGIC_HEADER_TRANSFER), null, regToFuture(headFuture));
+                    break;
+                case UNKNOWN:
+                    return completedFuture(false);
             }
             Integer headLength = await(headFuture);
 

@@ -46,7 +46,7 @@ public class ClientLauncher {
             return;
         }
 
-        if (cmd.hasOption("help")) {
+        if (cmd.hasOption("?")) {
             HelpFormatter hf = new HelpFormatter();
             hf.printHelp("Options", options);
             return;

@@ -63,27 +63,40 @@ public class Reader {
         }
     }
 
+    public static CompletableFuture<byte[]> readFromChannel(AsynchronousSocketChannel channel, int length) {
+        Integer futureLength;
+        ByteBuffer buffer = ByteBuffer.allocate(length);
+        CompletableFuture<Integer> Future = new CompletableFuture<>();
+        channel.read(buffer, null, regToFuture(Future));
+        futureLength = await(Future);
+        if (!futureLength.equals(length)) {
+            throw new NotOurMsgException(String.format(
+                    "Bad data in reading message length info. Length field except length 8, got %d", futureLength));
+        }
+        return completedFuture(buffer.array());
+    }
+
+    public static CompletableFuture<byte[]> readFixedFromChannel(AsynchronousSocketChannel channel, int length) {
+        Integer futureLength = 0;
+        ByteBuffer fullBuffer = ByteBuffer.allocate(length);
+        ByteBuffer buffer = ByteBuffer.allocate(length);
+        while (!futureLength.equals(length)) {
+            CompletableFuture<Integer> Future = new CompletableFuture<>();
+            channel.read(buffer, null, regToFuture(Future));
+            futureLength = await(Future);
+            buffer.flip();
+            fullBuffer.put(buffer);
+            length -= futureLength;
+            buffer = ByteBuffer.allocate(length);
+        }
+        return completedFuture(fullBuffer.array());
+    }
+
     public CompletableFuture<byte[]> readVerifiedMsg(AsynchronousSocketChannel channel) {
         try {
-            Integer futureLength;
-            ByteBuffer raw_length = ByteBuffer.allocate(8);
-            CompletableFuture<Integer> lengthFuture = new CompletableFuture<>();
-            channel.read(raw_length, null, regToFuture(lengthFuture));
-            futureLength = await(lengthFuture);
-            if (!futureLength.equals(8)) {
-                throw new NotOurMsgException(String.format(
-                        "Bad data in reading message length info. Length field except length 8, got %d", futureLength));
-            }
-            int length = Integer.parseUnsignedInt(new String(raw_length.array()), 16);
-            ByteBuffer message = ByteBuffer.allocate(length);
-            CompletableFuture<Integer> dataFuture = new CompletableFuture<>();
-            channel.read(message, null, regToFuture(dataFuture));
-            futureLength = await(dataFuture);
-            if (!futureLength.equals(length)) {
-                throw new NotOurMsgException(String.format(
-                        "Bad data in reading message data. Data field except length %d, got %d", length, futureLength));
-            }
-            return completedFuture(message.array());
+            byte[] raw_length = await(readFromChannel(channel, 8));
+            int length = Integer.parseUnsignedInt(new String(raw_length), 16);
+            return readFixedFromChannel(channel, length);
         } catch (CompletionException e) {
             throw new NotOurMsgException("Failed in reading transfer head.", e);
         }
@@ -129,7 +142,8 @@ public class Reader {
             result.type = Session.MessageType.THREAD;
         }
         else {
-            throw new NotOurMsgException("Bad data in reading message type. Unknown connection type.");
+            result.type = Session.MessageType.UNKNOWN;
+            return completedFuture(result);
         }
         result.message = readVerifiedMsg(channel);
         return completedFuture(result);
@@ -202,6 +216,18 @@ public class Reader {
     }
 
     public static void verifySession(byte[] session, ByteBuffer buffer) {
+//        byte[] a = readFromBuffer(buffer, 32);
+//        for (byte i : a) {
+//            System.out.printf("%02x ", i);
+//        }
+//        System.out.println();
+//        for (byte i : session) {
+//            System.out.printf("%02x ", i);
+//        }
+//        System.out.println();
+//        if (!Arrays.equals(a, session)) {
+//            throw new NotOurMsgException("Session Conflict.");
+//        }
         if (!Arrays.equals(readFromBuffer(buffer, 32), session)) {
             throw new NotOurMsgException("Session Conflict.");
         }
@@ -213,8 +239,8 @@ public class Reader {
         try {
             verifySession(session, buffer);
             result.pieceSize = Integer.parseUnsignedInt(new String(readFromBuffer(buffer, 8)), 16);
-            result.fileLength = Long.parseUnsignedLong(new String(readFromBuffer(buffer, 8)), 16);
-            result.filePath = new String(readLeftFromBuffer(buffer));
+            result.fileLength = Long.parseUnsignedLong(new String(readFromBuffer(buffer, 16)), 16);
+            result.filePath = new String(readLeftFromBuffer(buffer)).trim();
             return result;
         } catch (IndexOutOfBoundsException | BufferUnderflowException e) {
             throw new NotOurMsgException("Failed in reading file negotiation message.");
@@ -252,11 +278,15 @@ public class Reader {
         Writer.WriteData data = new Writer.WriteData();
         ByteBuffer buffer = ByteBuffer.wrap(dec.decrypt(message));
         try {
-            readFromBuffer(buffer, 16);
             verifySession(session, buffer);
             data.order = Integer.parseUnsignedInt(new String(readFromBuffer(buffer, 8)), 16);
             int size = Integer.parseUnsignedInt(new String(readFromBuffer(buffer, 8)), 16);
+            if (data.order == 0 && size == 0) {
+                data.OK = false;
+                return data;
+            }
             data.data = ByteBuffer.wrap(readFromBuffer(buffer, size));
+            data.OK = true;
             return data;
         } catch (IndexOutOfBoundsException | BufferUnderflowException e) {
             throw new NotOurMsgException("Failed in reading file transfer message.");
