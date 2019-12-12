@@ -18,6 +18,12 @@ import java.util.function.Function;
 import static com.ea.async.Async.await;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+/**
+ * class ServerSession handles all connections comes from one client.
+ * It saves status of handshake and transfer to react client properly.
+ *
+ * @author TYTY
+ */
 public class ServerSession {
     static CompletableFuture<Boolean> False = completedFuture(false);
 
@@ -34,6 +40,13 @@ public class ServerSession {
     Function<Void, Void> onFinish;
     AtomicInteger threadCount;
 
+    /**
+     * Static method to process server hello data and return ServerSession instance
+     * @param SSession socket
+     * @param key password
+     * @param serverHelloData data received by server. provide for further verification
+     * @return ServerSession object
+     */
     public static ServerSession StartSession(AsynchronousSocketChannel SSession, String key, byte[] serverHelloData) {
         ServerSession newSession = new ServerSession();
         newSession.builder = new Constructor(key);
@@ -43,16 +56,22 @@ public class ServerSession {
 
         newSession.helloStatus = newSession.reader.serverHello(serverHelloData);
 
-        if (newSession.helloStatus == Session.HelloStatus.OK) {
-            newSession.session = Session.session(32);
+        if (newSession.helloStatus != Session.HelloStatus.OK) {
+            return null;
         }
-
+        newSession.session = Session.session(32);
         newSession.status = ServerSessionStatus.INIT;
         newSession.threadCount = new AtomicInteger(0);
 
         return newSession;
     }
 
+    /**
+     * handshake part logic
+     * verify client and confirm file info
+     * @param finishFunction Function to call when session finished in any status
+     * @return if session finished successfully or with wrong
+     */
     public CompletableFuture<Boolean> doHandshake(Function<Void, Void> finishFunction) {
 
         onFinish = finishFunction;
@@ -141,6 +160,11 @@ public class ServerSession {
         return False;
     }
 
+    /**
+     * attach a thread socket to this channel
+     * @param SThread socket
+     * @return placeholder
+     */
     public CompletableFuture<Void> attachThread(AsynchronousSocketChannel SThread) {
         int index = threadCount.getAndIncrement();
         try {

@@ -18,7 +18,12 @@ import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
-
+/**
+ * class Client represents a client to upload a file to the server.
+ * It holds file info as well as threads.
+ *
+ * @author TYTY
+ */
 public class Client {
 
     static CompletableFuture<Boolean> False = completedFuture(false);
@@ -48,6 +53,11 @@ public class Client {
         this.thread = thread;
     }
 
+    /**
+     * start a thread to transfer data
+     * @param index thread index used to print information
+     * @return if thread finished normally or abnormally
+     */
     public CompletableFuture<Boolean> runThread(int index) {
         AsynchronousSocketChannel CThread;
 
@@ -68,7 +78,7 @@ public class Client {
 //            System.out.printf("Thread#%d: Sending init data...", index);
             CompletableFuture<Boolean> fileTransferInitFuture = builder.writeMsg(CThread, builder.fileTransferInit(session), Session.MessageType.THREAD);
             if (!await(fileTransferInitFuture)) {
-                System.out.println("Failed in sending file transfer init data.");
+                System.out.printf("Thread#%d: Failed in sending file transfer init data.\n", index);
                 System.exit(1);
                 return False;
             }
@@ -80,7 +90,7 @@ public class Client {
             while (data.ok) {
                 fileTransferFuture = builder.writeMsg(CThread, builder.fileTransfer(session, data), Session.MessageType.THREAD);
                 if (!await(fileTransferFuture)) {
-                    System.out.println("Failed in sending file transfer data.");
+                    System.out.printf("Thread#%d: Failed in sending file transfer data.\n", index);
                     System.exit(1);
                     return False;
                 }
@@ -93,7 +103,7 @@ public class Client {
             data.data = ByteBuffer.allocate(0);
             fileTransferFuture = builder.writeMsg(CThread, builder.fileTransfer(session, data), Session.MessageType.THREAD);
             if (!await(fileTransferFuture)) {
-                System.out.println("Failed in sending file transfer finish data.");
+                System.out.printf("Thread#%d: Failed in sending file transfer finish data.\n", index);
                 System.exit(1);
                 return False;
             }
@@ -118,6 +128,10 @@ public class Client {
         }
     }
 
+    /**
+     * start connect server and do handshake, and when finished, start file transfer thread.
+     * @return if completed normally
+     */
     public CompletableFuture<Boolean> runSession() {
         long start = System.nanoTime();
         AsynchronousSocketChannel CSession;

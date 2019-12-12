@@ -9,6 +9,11 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.GeneralSecurityException;
 
+/**
+ * class Decrypter encapsulate java's AES algorithm to provide simple call to decrypt data.
+ *
+ * @author TYTY
+ */
 public class Decrypter {
     Cipher cipher;
 

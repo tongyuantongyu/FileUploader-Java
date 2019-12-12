@@ -20,6 +20,12 @@ import java.util.concurrent.CompletionException;
 import static com.ea.async.Async.await;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+/**
+ *  class Server is an acceptor to receive new connections and build proper handler to deal with them.
+ *  And itself implements CompletionHandler interface to allow callback-style asynchronous use it as handler.
+ *
+ * @author TYTY
+ */
 public class Server implements CompletionHandler<AsynchronousSocketChannel, Void> {
 
     Constructor builder;
@@ -33,8 +39,14 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
     static CompletableFuture<Void> Return = completedFuture(null);
 
     AsynchronousServerSocketChannel SAcceptor;
-    Map<SessionHolder, ServerSession> sessionMap;
+    Map<SessionHelper, ServerSession> sessionMap;
 
+    /**
+     * Initialize socket listener
+     * @param host ip to bind and listen to
+     * @param port port to bind and listen to
+     * @param key password to be used
+     */
     public Server(InetAddress host, int port, String key) {
         try {
             SAcceptor = AsynchronousServerSocketChannel.open();
@@ -60,10 +72,10 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
     /**
      * Helper class to solve native array can't be hashed
      */
-    public static final class SessionHolder {
+    public static final class SessionHelper {
         private final byte[] t;
 
-        public SessionHolder(byte[] t) {
+        public SessionHelper(byte[] t) {
             this.t = t;
         }
 
@@ -82,7 +94,7 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            return Arrays.equals(this.t, ((SessionHolder) obj).t);
+            return Arrays.equals(this.t, ((SessionHelper) obj).t);
         }
     }
 
@@ -99,18 +111,24 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
             case SESSION:
                 System.out.println("Acceptor: New session.");
                 ServerSession SSession = ServerSession.StartSession(CSocket, key, await(guessResult.message));
-                sessionMap.put(new SessionHolder(SSession.session), SSession);
+                if (SSession == null) {
+                    try {
+                        CSocket.close();
+                    } catch (IOException ignored) {}
+                    return Return;
+                }
+                sessionMap.put(new SessionHelper(SSession.session), SSession);
                 SSession.doHandshake((Void) -> {
-                    sessionMap.remove(new SessionHolder(SSession.session));
+                    sessionMap.remove(new SessionHelper(SSession.session));
                     return null;
                 });
                 break;
             case THREAD:
                 System.out.println("Acceptor: New Thread.");
                 byte[] session = reader.fileTransferInit(await(guessResult.message));
-                if (sessionMap.containsKey(new SessionHolder(session))) {
+                if (sessionMap.containsKey(new SessionHelper(session))) {
                     System.out.println("Acceptor: Attach to session.");
-                    sessionMap.get(new SessionHolder(session)).attachThread(CSocket);
+                    sessionMap.get(new SessionHelper(session)).attachThread(CSocket);
                 } else {
                     System.out.println("Acceptor: Orphan thread, close.");
                     try {

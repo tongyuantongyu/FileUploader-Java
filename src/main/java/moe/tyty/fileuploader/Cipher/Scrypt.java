@@ -4,6 +4,11 @@ import com.lambdaworks.crypto.SCrypt;
 
 import java.security.GeneralSecurityException;
 
+/**
+ * class Scrypt wraps scrypt algorithm to provide a fire and forget call to get a safe key from password.
+ *
+ * @author TYTY
+ */
 public class Scrypt {
 
     static byte[] salt = "qwertyuiopasdfghjklzxcvbnm123456".getBytes();
