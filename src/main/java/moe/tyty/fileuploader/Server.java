@@ -28,18 +28,18 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  */
 public class Server implements CompletionHandler<AsynchronousSocketChannel, Void> {
 
-    Constructor builder;
-    Reader reader;
+    final Constructor builder;
+    final Reader reader;
 
-    InetAddress host;
+    final InetAddress host;
     SocketAddress listen;
-    int port;
-    String key;
+    final int port;
+    final String key;
 
-    static CompletableFuture<Void> Return = completedFuture(null);
+    static final CompletableFuture<Void> Return = completedFuture(null);
 
     AsynchronousServerSocketChannel SAcceptor;
-    Map<SessionHelper, ServerSession> sessionMap;
+    final Map<SessionHelper, ServerSession> sessionMap;
 
     /**
      * Initialize socket listener
@@ -103,6 +103,7 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
      * @param CSocket socket connected
      * @return void wrapped with CompletableFuture to use await
      */
+    @SuppressWarnings("UnusedReturnValue")
     public CompletableFuture<Void> dispatch(AsynchronousSocketChannel CSocket) {
         CompletableFuture<Session.MsgGuess> helloFuture = reader.readMsgGuess(CSocket);
         Session.MsgGuess guessResult = await(helloFuture);
@@ -187,6 +188,7 @@ public class Server implements CompletionHandler<AsynchronousSocketChannel, Void
         SAcceptor.accept(null, this);
         try {
             // block main thread to prevent it from exit
+            //noinspection ResultOfMethodCallIgnored
             System.in.read();
         } catch (IOException e) {
             e.printStackTrace();

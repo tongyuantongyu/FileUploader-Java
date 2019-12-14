@@ -14,11 +14,11 @@ import static com.ea.async.Async.await;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class Constructor {
-    static byte[] MAGIC_HEADER = {84, 89};
-    static byte[] MAGIC_HEADER_TRANSFER = {89, 84};
-    static byte[] VERSION = {1, 1, 1, 1};
+    static final byte[] MAGIC_HEADER = {84, 89};
+    static final byte[] MAGIC_HEADER_TRANSFER = {89, 84};
+    static final byte[] VERSION = {1, 1, 1, 1};
 
-    Encrypter enc;
+    final Encrypter enc;
 
     public Constructor(String password) {
         enc = new Encrypter(password);

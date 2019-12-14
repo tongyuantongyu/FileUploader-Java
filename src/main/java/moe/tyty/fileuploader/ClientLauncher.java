@@ -1,6 +1,7 @@
 package moe.tyty.fileuploader;
 
 import com.ea.async.Async;
+import moe.tyty.fileuploader.Exception.BadOptionException;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.concurrent.ExecutionException;
  * CLI launcher to the client
  */
 public class ClientLauncher {
+    @SuppressWarnings("DuplicatedCode")
     public static void main(String[] args) {
         Options options = new Options();
 
@@ -71,7 +73,15 @@ public class ClientLauncher {
             if (timeConsume != (double) -1) {
                 System.out.printf("File transfer finished in %f seconds.\n", timeConsume);
             }
-        } catch (RuntimeException | InterruptedException | ExecutionException | IOException e) {
+        } catch (BadOptionException e) {
+            System.out.println("Bad option:" + e.getMessage());
+            if (e.showHelp) {
+                HelpFormatter hf = new HelpFormatter();
+                hf.printHelp("Options", options);
+            }
+            System.exit(1);
+        }
+        catch (RuntimeException | InterruptedException | ExecutionException | IOException e) {
             System.err.printf("File transfer failed: %s\nStackTrace: \n", e.getMessage());
             e.printStackTrace();
         }

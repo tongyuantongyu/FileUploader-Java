@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 
 public class WriterTest {
     @Rule
-    public TemporaryFolder tmpFolder = new TemporaryFolder();
+    public final TemporaryFolder tmpFolder = new TemporaryFolder();
 
     @Test
     public void write_full_piece() throws Exception {
@@ -64,6 +64,7 @@ public class WriterTest {
     @Test(expected = moe.tyty.fileuploader.Exception.FileOpenException.class)
     public void write_too_big() {
         String TestPath = tmpFolder.getRoot().getAbsolutePath();
+        //noinspection unused
         Writer writer = new Writer(TestPath + "/TOO_BIG_FILE", Long.MAX_VALUE, 16);
     }
 }

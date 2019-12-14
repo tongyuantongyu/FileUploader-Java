@@ -7,9 +7,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.*;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -21,11 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Writer {
     private AsynchronousFileChannel file;
-    private int buff_s;
+    private final int buff_s;
     private boolean working;
     public volatile boolean finish = false;
-    public volatile boolean closed = false;
-    private AtomicInteger writingTask = new AtomicInteger(0);
+    public final boolean closed = false;
+    private final AtomicInteger writingTask = new AtomicInteger(0);
 
 
     /**

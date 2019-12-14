@@ -6,7 +6,7 @@
 
     <groupId>moe.tyty</groupId>
     <artifactId>FileUploader</artifactId>
-    <version>0.3-alpha</version>
+    <version>1.0-beta</version>
     <build>
         <plugins>
             <plugin>

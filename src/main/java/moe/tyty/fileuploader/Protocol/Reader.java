@@ -17,11 +17,11 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static com.ea.async.Async.await;
 
 public class Reader {
-    static byte[] MAGIC_HEADER = {84, 89};
-    static byte[] MAGIC_HEADER_TRANSFER = {89, 84};
-    static byte[] VERSION = {1, 1, 1, 1};
+    static final byte[] MAGIC_HEADER = {84, 89};
+    static final byte[] MAGIC_HEADER_TRANSFER = {89, 84};
+    static final byte[] VERSION = {1, 1, 1, 1};
 
-    Decrypter dec;
+    final Decrypter dec;
 
     public Reader(String password) {
         dec = new Decrypter(password);
@@ -134,7 +134,6 @@ public class Reader {
             throw new NotOurMsgException("Failed in reading transfer head.", e);
         }
 
-        byte[] head_byte = head.array();
         if (Arrays.equals(head.array(), MAGIC_HEADER)) {
             result.type = Session.MessageType.SESSION;
         }

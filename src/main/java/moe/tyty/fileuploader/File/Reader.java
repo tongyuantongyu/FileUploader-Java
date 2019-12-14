@@ -19,7 +19,7 @@ import java.util.concurrent.Future;
 public class Reader {
     private AsynchronousFileChannel file;
     public long size;
-    private int buff_s;
+    private final int buff_s;
     private long offset;
     private int order;
     public boolean working;

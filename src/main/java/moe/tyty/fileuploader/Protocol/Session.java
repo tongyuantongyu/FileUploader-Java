@@ -45,7 +45,7 @@ public class Session {
     public enum MessageType {SESSION, THREAD, UNKNOWN}
     public enum HelloStatus {OK, BAD_PASSWORD, BAD_VERSION}
     public enum NegotiationStatus {OK, OPEN_FAIL}
-    static Random random_source = new Random();
+    static final Random random_source = new Random();
 
     public static class MsgGuess {
         public Session.MessageType type;

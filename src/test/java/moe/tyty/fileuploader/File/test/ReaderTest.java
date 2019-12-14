@@ -83,6 +83,7 @@ public class ReaderTest {
 
     @Test(expected = moe.tyty.fileuploader.Exception.FileOpenException.class)
     public void read_non_exist() {
+        //noinspection unused
         Reader reader = new Reader("ABSOLUTELY_NON_EXIST_PATH", 16);
     }
 }

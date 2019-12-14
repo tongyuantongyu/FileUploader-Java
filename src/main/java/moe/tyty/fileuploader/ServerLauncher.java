@@ -12,6 +12,7 @@ import java.net.UnknownHostException;
  * CLI Server Launcher
  */
 public class ServerLauncher {
+    @SuppressWarnings("DuplicatedCode")
     public static void main(String[] args) {
         Options options = new Options();
 

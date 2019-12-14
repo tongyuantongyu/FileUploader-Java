@@ -133,18 +133,18 @@ public class Client {
         return option;
     }
 
-    static CompletableFuture<Boolean> False = completedFuture(false);
+    static final CompletableFuture<Boolean> False = completedFuture(false);
 
-    moe.tyty.fileuploader.File.Reader file;
-    Constructor builder;
-    Reader reader;
-    SocketAddress server;
-    InetAddress host;
-    int port;
-    String key;
-    String file_;
-    int thread;
-    int size;
+    final moe.tyty.fileuploader.File.Reader file;
+    final Constructor builder;
+    final Reader reader;
+    final SocketAddress server;
+    final InetAddress host;
+    final int port;
+    final String key;
+    final String file_;
+    final int thread;
+    final int size;
     byte[] session;
 
     public Client(InetAddress host, int port, String key, String file_, int thread, int size, String srv_file) {

@@ -11,7 +11,7 @@ import java.security.GeneralSecurityException;
  */
 public class Scrypt {
 
-    static byte[] salt = "qwertyuiopasdfghjklzxcvbnm123456".getBytes();
+    static final byte[] salt = "qwertyuiopasdfghjklzxcvbnm123456".getBytes();
 
     /**
      * generate key using password by Scrypt algorithm.

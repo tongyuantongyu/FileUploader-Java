@@ -24,7 +24,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * @author TYTY
  */
 public class ServerSession {
-    static CompletableFuture<Boolean> False = completedFuture(false);
+    static final CompletableFuture<Boolean> False = completedFuture(false);
 
     public enum ServerSessionStatus {INIT, HANDSHAKE, READY, FINISH}
 
@@ -71,6 +71,7 @@ public class ServerSession {
      * @param finishFunction Function to call when session finished in any status
      * @return if session finished successfully or with wrong
      */
+    @SuppressWarnings("UnusedReturnValue")
     public CompletableFuture<Boolean> doHandshake(Function<Void, Void> finishFunction) {
 
         onFinish = finishFunction;
@@ -164,6 +165,7 @@ public class ServerSession {
      * @param SThread socket
      * @return placeholder
      */
+    @SuppressWarnings("UnusedReturnValue")
     public CompletableFuture<Void> attachThread(AsynchronousSocketChannel SThread) {
         int index = threadCount.getAndIncrement();
         try {
