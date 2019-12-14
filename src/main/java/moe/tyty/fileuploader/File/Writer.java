@@ -21,7 +21,6 @@ public class Writer {
     private final int buff_s;
     private boolean working;
     public volatile boolean finish = false;
-    public boolean closed = false;
     private final AtomicInteger writingTask = new AtomicInteger(0);
 
 
@@ -77,15 +76,18 @@ public class Writer {
             file.write(data.data, ((long) data.order) * buff_s, null, new CompletionHandler<Integer, Void>() {
                 @Override
                 public void completed(Integer result, Void attachment) {
-                    if (finish && !closed && writingTask.decrementAndGet() == 0) {
+                    int now = writingTask.decrementAndGet();
+                    if (finish && now == 0) {
                         try {
                             file.close();
                             System.out.println("File Closed.");
-                            closed = true;
                         } catch (IOException e) {
                             e.printStackTrace();
                             System.out.println("Exception while closing file.");
                         }
+                    }
+                    if (finish) {
+                        System.out.printf("%d - %d\n", now, writingTask.get());
                     }
                 }
 
@@ -105,11 +107,10 @@ public class Writer {
      */
     public void close() {
         if (!working) return;
-        if (finish && !closed && writingTask.get() == 0) {
+        if (finish && writingTask.get() == 0) {
             try {
                 file.close();
                 System.out.println("File Closed.");
-                closed = true;
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println("Exception while closing file.");
