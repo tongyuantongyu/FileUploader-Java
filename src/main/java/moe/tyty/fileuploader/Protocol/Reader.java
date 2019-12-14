@@ -94,7 +94,7 @@ public class Reader {
 
     public CompletableFuture<byte[]> readVerifiedMsg(AsynchronousSocketChannel channel) {
         try {
-            byte[] raw_length = await(readFromChannel(channel, 8));
+            byte[] raw_length = await(readFixedFromChannel(channel, 8));
             int length = Integer.parseUnsignedInt(new String(raw_length), 16);
             return readFixedFromChannel(channel, length);
         } catch (CompletionException e) {
@@ -120,24 +120,12 @@ public class Reader {
 
     public CompletableFuture<Session.MsgGuess> readMsgGuess(AsynchronousSocketChannel channel) {
         Session.MsgGuess result = new Session.MsgGuess();
-        ByteBuffer head = ByteBuffer.allocate(2);
-        CompletableFuture<Integer> headFuture = new CompletableFuture<>();
-        channel.read(head, null, regToFuture(headFuture));
-        Integer futureLength;
-        try {
-            futureLength = await(headFuture);
-            if (!futureLength.equals(2)) {
-                throw new NotOurMsgException(String.format(
-                        "Bad data in reading message head. Head field except length 2, got %d", futureLength));
-            }
-        } catch (CompletionException e) {
-            throw new NotOurMsgException("Failed in reading transfer head.", e);
-        }
+        byte[] head = await(readFixedFromChannel(channel, 2));
 
-        if (Arrays.equals(head.array(), MAGIC_HEADER)) {
+        if (Arrays.equals(head, MAGIC_HEADER)) {
             result.type = Session.MessageType.SESSION;
         }
-        else if (Arrays.equals(head.array(), MAGIC_HEADER_TRANSFER)) {
+        else if (Arrays.equals(head, MAGIC_HEADER_TRANSFER)) {
             result.type = Session.MessageType.THREAD;
         }
         else {

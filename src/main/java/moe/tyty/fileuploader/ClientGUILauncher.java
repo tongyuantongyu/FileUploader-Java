@@ -233,7 +233,7 @@ public class ClientGUILauncher extends JFrame {
                 runningClick = true;
                 String nowText = status.getText();
                 status.setText("An upload process in in progress. Please wait...");
-                Timer timer = new Timer(1000, ignored2 -> {
+                Timer timer = new Timer(5000, ignored2 -> {
                     if (status.getText().equals("An upload process in in progress. Please wait...")) {
                         status.setText(nowText);
                     }
