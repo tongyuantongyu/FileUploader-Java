@@ -34,6 +34,9 @@ public class WriterTest {
 
         writer.close();
 
+        // new writer implementation require some more time to ensure writing finished. 500ms should be far more than enough.
+        Thread.sleep(500);
+
         byte[] array = Files.readAllBytes(Paths.get(TestPath + "/test_fullpiece"));
         assertArrayEquals("0123456789ABCDEF0123456789ABCDEF".getBytes(), array);
     }
@@ -56,6 +59,9 @@ public class WriterTest {
         assertTrue(writer.write(data));
 
         writer.close();
+
+        // see L37
+        Thread.sleep(500);
 
         byte[] array = Files.readAllBytes(Paths.get(TestPath + "/test_shortpiece"));
         assertArrayEquals("0123456789ABCDEF0123456789ABCDE".getBytes(), array);
