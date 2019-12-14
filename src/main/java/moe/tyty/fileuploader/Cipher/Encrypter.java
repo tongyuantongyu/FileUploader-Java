@@ -19,6 +19,7 @@ public class Encrypter {
 
     public Encrypter(String password) {
         try {
+            // On some framework the padding method is called PKCS7 but both works the same under AES.
             cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Scrypt.scrypt(password), "AES"));
         } catch (GeneralSecurityException e) {

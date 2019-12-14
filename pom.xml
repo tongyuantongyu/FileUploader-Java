@@ -6,7 +6,7 @@
 
     <groupId>moe.tyty</groupId>
     <artifactId>FileUploader</artifactId>
-    <version>0.2-alpha</version>
+    <version>0.3-alpha</version>
     <build>
         <plugins>
             <plugin>
@@ -56,6 +56,26 @@
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
                             <finalName>${project.artifactId}-Server-${project.version}</finalName>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>build-client-gui</id>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>moe.tyty.fileuploader.ClientGUILauncher</mainClass>
+                                </manifest>
+                            </archive>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <attach>false</attach>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>${project.artifactId}-GUIClient-${project.version}</finalName>
                         </configuration>
                         <phase>package</phase>
                         <goals>
