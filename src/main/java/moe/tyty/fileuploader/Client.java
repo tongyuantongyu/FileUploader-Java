@@ -41,7 +41,8 @@ public class Client {
     public static OptionPack buildOption(String host, String port, String key, String file,
                                          String thread, String size, String srv_file, boolean IPv4, boolean IPv6) {
         OptionPack option = new OptionPack();
-        if (host == null || port == null || key == null || file == null) {
+        if (host == null || port == null || key == null || file == null ||
+                host.equals("") || port.equals("") || key.equals("") || file.equals("")) {
             throw new BadOptionException("One or more required parameters not given.", true);
         }
 

@@ -8,6 +8,9 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+/**
+ * CLI Server Launcher
+ */
 public class ServerLauncher {
     public static void main(String[] args) {
         Options options = new Options();

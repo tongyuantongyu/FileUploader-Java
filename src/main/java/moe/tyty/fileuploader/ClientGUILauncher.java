@@ -10,10 +10,13 @@ import java.awt.event.FocusListener;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * GUI launcher to the client
+ */
 public class ClientGUILauncher extends JFrame {
 
-    public boolean running = false;
-    public boolean runningClick = false;
+    public volatile boolean running = false;
+    public volatile boolean runningClick = false;
 
     static class HintTextField extends JTextField implements FocusListener {
 
@@ -236,46 +239,57 @@ public class ClientGUILauncher extends JFrame {
                     }
                     runningClick = false;
                 });
+                timer.setRepeats(false);
+                timer.start();
                 return;
             }
             running = true;
-            try {
-                Client.OptionPack option = Client.buildOption(
-                        hostField.getText(),
-                        portField.getText(),
-                        new String(keyField.getPassword()),
-                        fileField.getText(),
-                        threadField.getValue(),
-                        sizeField.getValue(),
-                        savePathField.getValue(),
-                        modeIPv4.isSelected(),
-                        modeIPv6.isSelected()
-                );
-                Client client = new Client(option);
-                status.setText("Uploading... Please wait.");
-                new SwingWorker<Void, Void>() {
-                    @Override
-                    protected Void doInBackground() {
-                        try {
-                            double timeConsume = client.runSession().get();
-                            if (timeConsume != (double) -1) {
-                                status.setText(String.format("File transfer finished in %f seconds.\n", timeConsume));
-                            }
-                        } catch (RuntimeException | InterruptedException | ExecutionException | IOException e) {
-                            e.printStackTrace();
-                            status.setText(String.format("[Failed] %s.", e.getMessage()));
-                        } finally {
-                            running = false;
+            status.setText("Uploading... Please wait.");
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() {
+                    try {
+                        Client.OptionPack option = Client.buildOption(
+                                hostField.getText(),
+                                portField.getText(),
+                                new String(keyField.getPassword()),
+                                fileField.getText(),
+                                threadField.getValue(),
+                                sizeField.getValue(),
+                                savePathField.getValue(),
+                                modeIPv4.isSelected(),
+                                modeIPv6.isSelected()
+                        );
+                        Client client = new Client(option);
+                        double timeConsume = client.runSession().get();
+                        if (timeConsume != (double) -1) {
+                            String infoText = String.format("File transfer finished in %f seconds.\n", timeConsume);
+                            status.setText(infoText);
+                            Timer timer = new Timer(10000, ignored2 -> {
+                                if (status.getText().equals(infoText)) {
+                                    status.setText("Ready.");
+                                }
+                            });
+                            timer.setRepeats(false);
+                            timer.start();
                         }
-                        return null;
+                    } catch (RuntimeException | InterruptedException | ExecutionException | IOException e) {
+                        e.printStackTrace();
+                        String infoText = String.format("[Failed] %s.", e.getMessage());
+                        status.setText(infoText);
+                        Timer timer = new Timer(10000, ignored2 -> {
+                            if (status.getText().equals(infoText)) {
+                                status.setText("Ready.");
+                            }
+                        });
+                        timer.setRepeats(false);
+                        timer.start();
+                    } finally {
+                        running = false;
                     }
-                }.execute();
-            } catch (RuntimeException e) {
-                e.printStackTrace();
-                status.setText(String.format("[Failed] %s.", e.getMessage()));
-            } finally {
-                running = false;
-            }
+                    return null;
+                }
+            }.execute();
         });
         constraints.weightx = 0.5;
         constraints.gridwidth = 2;

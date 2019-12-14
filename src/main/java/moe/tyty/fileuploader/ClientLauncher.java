@@ -6,6 +6,9 @@ import org.apache.commons.cli.*;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * CLI launcher to the client
+ */
 public class ClientLauncher {
     public static void main(String[] args) {
         Options options = new Options();
