@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -189,16 +188,12 @@ public class ServerSession {
             threadCount.decrementAndGet();
         }
         System.out.printf("Thread#%d: Finish transfer.\n", index);
-        try {
-            if (threadCount.decrementAndGet() == 0) {
-                System.out.println("Session finished. Saving file.");
-                status = ServerSessionStatus.FINISH;
-                file.close();
-                onFinish.apply(null);
-            }
-        }  catch (InterruptedException | ExecutionException | IOException e) {
-            e.printStackTrace();
-            System.out.printf("Thread#%d: Exception while closing file.\n", index);
+        if (threadCount.decrementAndGet() == 0) {
+            System.out.println("Session finished. Saving file.");
+            status = ServerSessionStatus.FINISH;
+            file.finish = true;
+            file.close();
+            onFinish.apply(null);
         }
         return completedFuture(null);
     }

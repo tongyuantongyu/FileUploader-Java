@@ -5,10 +5,12 @@ import moe.tyty.fileuploader.Exception.FileOpenException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
 import java.nio.file.*;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * class Writer is a wrapper to java.nio.channels.AsynchronousFileChannel to provide simple simple call to write out
@@ -18,10 +20,13 @@ import java.util.concurrent.Future;
  * @author TYTY
  */
 public class Writer {
-    private Vector<Future<Integer>> asyncFileWriteFutureVector;
     private AsynchronousFileChannel file;
     private int buff_s;
     private boolean working;
+    public volatile boolean finish = false;
+    public volatile boolean closed = false;
+    private AtomicInteger writingTask = new AtomicInteger(0);
+
 
     /**
      * Construct method
@@ -33,7 +38,6 @@ public class Writer {
      */
     public Writer(String path, long size, int buff_s) throws FileOpenException {
         this.buff_s = buff_s;
-        asyncFileWriteFutureVector = new Vector<>();
         try {
             Path _p = Paths.get(path).getRoot();
             if (_p == null) {
@@ -72,7 +76,27 @@ public class Writer {
     public boolean write(WriteData data) {
         if (!working || !data.OK) return false;
         try {
-            asyncFileWriteFutureVector.addElement(file.write(data.data, ((long) data.order) * buff_s));
+            writingTask.incrementAndGet();
+            file.write(data.data, ((long) data.order) * buff_s, null, new CompletionHandler<Integer, Void>() {
+                @Override
+                public void completed(Integer result, Void attachment) {
+                    int lasting = writingTask.decrementAndGet();
+                    if (finish && !closed && lasting == 0) {
+                        try {
+                            file.close();
+                            System.out.println("File Closed.");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            System.out.println("Exception while closing file.");
+                        }
+                    }
+                }
+
+                @Override
+                public void failed(Throwable exc, Void attachment) {
+                    throw new FileOpenException(exc);
+                }
+            });
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -81,14 +105,17 @@ public class Writer {
 
     /**
      * make sure everything has been wrote to the disk.
-     * @throws ExecutionException strange exception during async operation. Simply passing the exception.
-     * @throws InterruptedException interrupt issued by user. Simply passing the exception.
      */
-    public void close() throws ExecutionException, InterruptedException, IOException {
+    public void close() {
         if (!working) return;
-        for (Future<Integer> future : asyncFileWriteFutureVector) {
-            future.get();
+        if (finish && !closed && writingTask.get() == 0) {
+            try {
+                file.close();
+                System.out.println("File Closed.");
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("Exception while closing file.");
+            }
         }
-        file.close();
     }
 }
