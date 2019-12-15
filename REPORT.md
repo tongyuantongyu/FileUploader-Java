@@ -75,8 +75,11 @@ Bad: 模拟250ms延迟, 10%丢包率, 1%机率发生10ms连续丢包网络环境
 从列表数据可以看出，在理想环境下，少量增加线程数可以提高传输速度，但主要是对硬盘（SSD）读写速度的提升；而在模拟现实的网
 络环境下，单线程传输的速度则出现了极大的滑坡，而多线程则在一定范围内带来了接近线性的速度提升，且对于质量越差的网络环境，
 提速效果越为显著。
+
 总而言之，本程序确实达到了提高文件上传速度的目的。
 
 ## 开发，管理与发布
 
-本项目使用maven作为项目管理及构建工具，使用Git进行版本控制，所有代码以MIT协议开源，请参见[GitHub Repository](https://github.com/tongyuantongyu/FileUploader-Java)。
+本项目使用maven作为项目管理及构建工具，使用Git进行版本控制，所有代码以MIT协议公开，请参见[LICENSE](LICENSE)。
+
+另Github仓库地址: [GitHub Repository](https://github.com/tongyuantongyu/FileUploader-Java)。
